@@ -513,6 +513,7 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
                     final Checkpoint checkpointToSync;
                     final List<Long> flushedSequenceNumbers;
                     final ReleasableBytesReference toWrite;
+                    // 持久化内存中的 ops buffer
                     try (ReleasableLock toClose = writeLock.acquire()) {
                         synchronized (this) {
                             ensureOpen();
@@ -541,6 +542,7 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
                         closeWithTragicEvent(ex);
                         throw ex;
                     }
+                    // 更新已持久化 seq no.
                     flushedSequenceNumbers.forEach(persistedSequenceNumberConsumer::accept);
                     assert lastSyncedCheckpoint.offset <= checkpointToSync.offset : "illegal state: "
                         + lastSyncedCheckpoint.offset
@@ -582,6 +584,7 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
     private void writeAndReleaseOps(ReleasableBytesReference toWrite) throws IOException {
         try (ReleasableBytesReference toClose = toWrite) {
             assert writeLock.isHeldByCurrentThread();
+            // 每个线程一个 io buffer，对于写线程，使用 direct byte buffer（如果使用 heap buffer，可能会多一次拷贝？）
             ByteBuffer ioBuffer = DiskIoBufferPool.getIoBuffer();
 
             BytesRefIterator iterator = toWrite.iterator();

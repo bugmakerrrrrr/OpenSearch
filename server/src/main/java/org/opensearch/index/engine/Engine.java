@@ -1536,7 +1536,7 @@ public abstract class Engine implements LifecycleAware, Closeable {
         private final long ifPrimaryTerm;
 
         public Index(
-            Term uid,
+            Term uid,  // _id 字段
             ParsedDocument doc,
             long seqNo,
             long primaryTerm,

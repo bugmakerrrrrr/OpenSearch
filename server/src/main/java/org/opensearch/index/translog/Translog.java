@@ -274,11 +274,13 @@ public abstract class Translog extends AbstractIndexShardComponent implements In
         try {
             // we first copy this into the temp-file and then fsync it followed by an atomic move into the target file
             // that way if we hit a disk-full here we are still in an consistent state.
+            // translog.ckp -> translog-<random>.ckp -> translog-<gen>.ckp，通过 tmp file 的方式达到原子替换的目的，从而保证任意情况下都处于 consistent state
             Files.copy(location.resolve(CHECKPOINT_FILE_NAME), tempFile, StandardCopyOption.REPLACE_EXISTING);
             IOUtils.fsync(tempFile, false);
             Files.move(tempFile, targetPath, StandardCopyOption.ATOMIC_MOVE);
             tempFileRenamed = true;
             // we only fsync the directory the tempFile was already fsynced
+            // 只 fsync 父目录，因为文件已经 sync 过
             IOUtils.fsync(targetPath.getParent(), true);
         } finally {
             if (tempFileRenamed == false) {
@@ -1711,6 +1713,7 @@ public abstract class Translog extends AbstractIndexShardComponent implements In
                 final TranslogReader reader = current.closeIntoReader();
                 readers.add(reader);
                 assert Checkpoint.read(location.resolve(CHECKPOINT_FILE_NAME)).generation == current.getGeneration();
+                // 将当前 checkpoint 文件（translog.ckp）转为 generation checkpoint 文件（translog-<gen>.ckp）
                 copyCheckpointTo(location.resolve(getCommitCheckpointFileName(current.getGeneration())));
                 // create a new translog file; this will sync it and update the checkpoint data;
                 current = createWriter(current.getGeneration() + 1);

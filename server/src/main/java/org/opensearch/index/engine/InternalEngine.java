@@ -894,7 +894,7 @@ public class InternalEngine extends Engine {
                         index = new Index(
                             index.uid(),
                             index.parsedDoc(),
-                            generateSeqNoForOperationOnPrimary(index),
+                            generateSeqNoForOperationOnPrimary(index),  // seq no 在 primary engine 侧生成
                             index.primaryTerm(),
                             index.version(),
                             index.versionType(),
@@ -1751,6 +1751,7 @@ public class InternalEngine extends Engine {
         return refresh(source, SearcherScope.EXTERNAL, false);
     }
 
+    // 只有 external refresh 才会刷新外部的 reader，即外部请求才能读取到增量的数据
     final boolean refresh(String source, SearcherScope scope, boolean block) throws EngineException {
         // both refresh types will result in an internal refresh but only the external will also
         // pass the new reader reference to the external reader manager.
@@ -1763,6 +1764,7 @@ public class InternalEngine extends Engine {
                 try {
                     // even though we maintain 2 managers we really do the heavy-lifting only once.
                     // the second refresh will only do the extra work we have to do for warming caches etc.
+                    // external manager 的刷新会代理给 internal manager 的刷新
                     ReferenceManager<OpenSearchDirectoryReader> referenceManager = getReferenceManager(scope);
                     // it is intentional that we never refresh both internal / external together
                     if (block) {

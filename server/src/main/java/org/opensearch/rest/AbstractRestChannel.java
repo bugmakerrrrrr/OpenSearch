@@ -86,6 +86,7 @@ public abstract class AbstractRestChannel implements RestChannel {
 
     @Override
     public XContentBuilder newBuilder() throws IOException {
+        // Content-Type header
         return newBuilder(request.getMediaType(), true);
     }
 

@@ -1020,7 +1020,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
             operation = prepareIndex(
                 docMapper(),
                 sourceToParse,
-                seqNo,
+                seqNo, // 对于 primary 为 UNASSIGNED_SEQ_NO
                 opPrimaryTerm,
                 version,
                 versionType,

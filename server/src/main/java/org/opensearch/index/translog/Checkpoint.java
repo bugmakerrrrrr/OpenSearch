@@ -224,6 +224,7 @@ final public class Checkpoint {
     }
 
     public static void write(FileChannel fileChannel, Path checkpointFile, Checkpoint checkpoint, boolean fsync) throws IOException {
+        // 大小小于原子写 page size（通常为 4k），因此可以保证原子写，否则覆盖写会存在文件损坏的问题，导致无法恢复，这个问题在数据库的 page 持久化过程中也同样存在
         byte[] bytes = createCheckpointBytes(checkpointFile, checkpoint);
         Channels.writeToChannel(bytes, fileChannel, 0);
         if (fsync == true) {
